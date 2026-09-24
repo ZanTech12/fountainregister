@@ -11,6 +11,7 @@ export default function Home() {
   });
 
   const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
 
   // Updated list of classes based on your provided data
   const classes = [
@@ -39,6 +40,20 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage('');
+    setIsError(false);
+
+    // Validation: Prevent acronyms/initials and numbers
+    const nameRegex = /^[A-Za-z\s'-]+$/;
+    if (formData.FirstName.trim().length < 3 || !nameRegex.test(formData.FirstName.trim())) {
+      setMessage('Please enter a valid full First Name (no acronyms, initials, or numbers).');
+      setIsError(true);
+      return;
+    }
+    if (formData.LastName.trim().length < 3 || !nameRegex.test(formData.LastName.trim())) {
+      setMessage('Please enter a valid full Last Name (no acronyms, initials, or numbers).');
+      setIsError(true);
+      return;
+    }
     
     try {
       // Updated to use environment variable
@@ -50,12 +65,15 @@ export default function Home() {
       
       if (response.ok) {
         setMessage('Student registered successfully!');
+        setIsError(false);
         setFormData({ FirstName: '', LastName: '', Gender: '', ClassName: '' });
       } else {
         setMessage('Failed to register student.');
+        setIsError(true);
       }
     } catch (error) {
       setMessage('Network error.');
+      setIsError(true);
     }
   };
 
@@ -64,7 +82,12 @@ export default function Home() {
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">Student Registration</h1>
         
-        {message && <p className="mb-4 text-center text-green-600 font-medium">{message}</p>}
+        {/* Conditional styling for success (green) or error (red) messages */}
+        {message && (
+          <p className={`mb-4 text-center font-medium ${isError ? 'text-red-600' : 'text-green-600'}`}>
+            {message}
+          </p>
+        )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -75,7 +98,6 @@ export default function Home() {
               required 
               value={formData.FirstName} 
               onChange={handleChange} 
-              // Added text-gray-900 and bg-white to fix mobile transparency
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -88,7 +110,6 @@ export default function Home() {
               required 
               value={formData.LastName} 
               onChange={handleChange} 
-              // Added text-gray-900 and bg-white to fix mobile transparency
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -100,7 +121,6 @@ export default function Home() {
               required 
               value={formData.Gender} 
               onChange={handleChange} 
-              // Added text-gray-900 to ensure dropdown text is black on mobile
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Select Gender</option>
@@ -116,7 +136,6 @@ export default function Home() {
               required 
               value={formData.ClassName} 
               onChange={handleChange} 
-              // Added text-gray-900 to ensure dropdown text is black on mobile
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Select Class</option>
@@ -132,6 +151,7 @@ export default function Home() {
               type="text" 
               value="A" 
               readOnly 
+              required
               className="mt-1 block w-full bg-gray-100 border border-gray-300 rounded-md shadow-sm p-2 cursor-not-allowed text-gray-500"
             />
             <p className="mt-1 text-xs text-gray-500">Section is fixed to A for all students.</p>
