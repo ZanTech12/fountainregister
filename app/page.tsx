@@ -75,7 +75,8 @@ export default function Home() {
               required 
               value={formData.FirstName} 
               onChange={handleChange} 
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+              // Added text-gray-900 and bg-white to fix mobile transparency
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           
@@ -87,7 +88,8 @@ export default function Home() {
               required 
               value={formData.LastName} 
               onChange={handleChange} 
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500"
+              // Added text-gray-900 and bg-white to fix mobile transparency
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -98,7 +100,8 @@ export default function Home() {
               required 
               value={formData.Gender} 
               onChange={handleChange} 
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white focus:ring-blue-500 focus:border-blue-500"
+              // Added text-gray-900 to ensure dropdown text is black on mobile
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Select Gender</option>
               <option value="Male">Male</option>
@@ -113,7 +116,8 @@ export default function Home() {
               required 
               value={formData.ClassName} 
               onChange={handleChange} 
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white focus:ring-blue-500 focus:border-blue-500"
+              // Added text-gray-900 to ensure dropdown text is black on mobile
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white text-gray-900 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Select Class</option>
               {classes.map((cls, i) => (
