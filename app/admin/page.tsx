@@ -13,6 +13,7 @@ interface Student {
 
 export default function AdminPage() {
   const [students, setStudents] = useState<Student[]>([]);
+  const [selectedClass, setSelectedClass] = useState<string | null>(null);
 
   // Keep track of the exact classes you offer to display them in order
   const classList = [
@@ -67,6 +68,11 @@ export default function AdminPage() {
     };
   });
 
+  // Filter students based on the selected class card
+  const displayedStudents = selectedClass 
+    ? students.filter(student => student.ClassName === selectedClass)
+    : students;
+
   return (
     <div className="min-h-screen bg-gray-50 p-10">
       <div className="bg-white p-6 rounded-lg shadow-md mb-8">
@@ -80,14 +86,22 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Class Statistics Section */}
-        <h2 className="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Class Statistics</h2>
+        {/* Class Statistics Section (Clickable) */}
+        <h2 className="text-xl font-bold text-gray-700 mb-4 border-b pb-2">Class Statistics (Click to Filter)</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
           {classCounts.map((cls) => (
-            <div key={cls.className} className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-center">
-              <h3 className="font-semibold text-sm text-blue-800">{cls.className}</h3>
-              <p className="text-3xl font-bold text-blue-600 my-1">{cls.count}</p>
-              <p className="text-xs text-gray-500">Students</p>
+            <div 
+              key={cls.className} 
+              onClick={() => setSelectedClass(selectedClass === cls.className ? null : cls.className)}
+              className={`cursor-pointer p-4 rounded-lg border text-center transition duration-200 ${
+                selectedClass === cls.className 
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-lg scale-105' 
+                  : 'bg-blue-50 border-blue-100 hover:bg-blue-100 text-gray-800'
+              }`}
+            >
+              <h3 className={`font-semibold text-sm ${selectedClass === cls.className ? 'text-white' : 'text-blue-800'}`}>{cls.className}</h3>
+              <p className="text-3xl font-bold my-1">{cls.count}</p>
+              <p className={`text-xs ${selectedClass === cls.className ? 'text-blue-100' : 'text-gray-500'}`}>Students</p>
             </div>
           ))}
         </div>
@@ -95,7 +109,19 @@ export default function AdminPage() {
 
       {/* Detailed Student List Section */}
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-bold text-gray-700 mb-4 border-b pb-2">All Registered Students</h2>
+        <div className="flex justify-between items-center mb-4 border-b pb-2">
+          <h2 className="text-xl font-bold text-gray-700">
+            {selectedClass ? `Students in ${selectedClass}` : "All Registered Students"}
+          </h2>
+          {selectedClass && (
+            <button 
+              onClick={() => setSelectedClass(null)}
+              className="text-sm text-blue-600 hover:underline font-medium"
+            >
+              ← Show All Students
+            </button>
+          )}
+        </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border border-gray-200">
@@ -111,12 +137,14 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {students.length === 0 ? (
+              {displayedStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-4 text-gray-500">No students registered yet.</td>
+                  <td colSpan={7} className="text-center py-4 text-gray-500">
+                    {selectedClass ? `No students registered in ${selectedClass} yet.` : "No students registered yet."}
+                  </td>
                 </tr>
               ) : (
-                students.map((student, index) => (
+                displayedStudents.map((student, index) => (
                   <tr key={student._id} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4 text-gray-500">{index + 1}</td>
                     <td className="py-3 px-4">{student.FirstName}</td>
