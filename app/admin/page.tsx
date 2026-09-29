@@ -14,6 +14,7 @@ interface Student {
 export default function AdminPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
 
   // Keep track of the exact classes you offer to display them in order
   const classList = [
@@ -49,6 +50,7 @@ export default function AdminPage() {
 
         if (res.ok) {
           setStudents(students.filter(student => student._id !== id));
+          setSelectedStudents(selectedStudents.filter(sId => sId !== id));
           alert("Student deleted successfully.");
         } else {
           alert("Failed to delete student.");
@@ -57,6 +59,43 @@ export default function AdminPage() {
         console.error('Failed to delete student', error);
         alert("Network error while deleting.");
       }
+    }
+  };
+
+  // --- NEW: Bulk Delete Handler ---
+  const handleBulkDelete = async () => {
+    if (window.confirm(`Are you sure you want to delete ${selectedStudents.length} selected students?`)) {
+      try {
+        // Loop through all selected IDs and send a delete request for each
+        const deletePromises = selectedStudents.map(id =>
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/students/${id}`, { method: 'DELETE' })
+        );
+        
+        await Promise.all(deletePromises);
+
+        // Remove deleted students from state
+        setStudents(students.filter(student => !selectedStudents.includes(student._id)));
+        setSelectedStudents([]); // Clear selection
+        alert("Selected students deleted successfully.");
+      } catch (error) {
+        console.error('Failed to delete selected students', error);
+        alert("Network error while deleting.");
+      }
+    }
+  };
+
+  // --- NEW: Selection Handlers ---
+  const toggleSelect = (id: string) => {
+    setSelectedStudents(prev =>
+      prev.includes(id) ? prev.filter(sId => sId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedStudents.length === displayedStudents.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(displayedStudents.map(s => s._id));
     }
   };
 
@@ -72,6 +111,11 @@ export default function AdminPage() {
   const displayedStudents = selectedClass 
     ? students.filter(student => student.ClassName === selectedClass)
     : students;
+
+  const handleClassClick = (className: string) => {
+    setSelectedStudents([]); // Clear selections when changing class filter
+    setSelectedClass(selectedClass === className ? null : className);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-10">
@@ -98,7 +142,7 @@ export default function AdminPage() {
           {classCounts.map((cls) => (
             <div 
               key={cls.className} 
-              onClick={() => setSelectedClass(selectedClass === cls.className ? null : cls.className)}
+              onClick={() => handleClassClick(cls.className)}
               className={`cursor-pointer p-3 sm:p-4 rounded-lg border text-center transition duration-200 ${
                 selectedClass === cls.className 
                   ? 'bg-blue-600 text-white border-blue-600 shadow-lg scale-105' 
@@ -115,18 +159,32 @@ export default function AdminPage() {
 
       {/* Detailed Student List Section */}
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
-        <div className="flex justify-between items-center mb-4 border-b pb-2">
+        <div className="flex justify-between items-center mb-4 border-b pb-2 flex-wrap gap-2">
           <h2 className="text-lg sm:text-xl font-bold text-gray-700">
             {selectedClass ? `${selectedClass}` : "All Students"}
           </h2>
-          {selectedClass && (
-            <button 
-              onClick={() => setSelectedClass(null)}
-              className="text-xs sm:text-sm text-blue-600 hover:underline font-medium"
-            >
-              ← Show All
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Show Bulk Delete Button if any are selected */}
+            {selectedStudents.length > 0 && (
+              <button 
+                onClick={handleBulkDelete}
+                className="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 transition text-xs sm:text-sm font-semibold"
+              >
+                Delete Selected ({selectedStudents.length})
+              </button>
+            )}
+            {selectedClass && (
+              <button 
+                onClick={() => {
+                  setSelectedClass(null);
+                  setSelectedStudents([]);
+                }}
+                className="text-xs sm:text-sm text-blue-600 hover:underline font-medium"
+              >
+                ← Show All
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Empty State Message (Shared) */}
@@ -141,15 +199,24 @@ export default function AdminPage() {
               {displayedStudents.map((student, index) => (
                 <div key={student._id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-bold text-gray-800 text-base">
-                        {index + 1}. {student.FirstName} {student.LastName}
-                      </p>
-                      <p className="text-sm text-gray-600">{student.Gender}</p>
+                    <div className="flex items-start gap-3">
+                      {/* Mobile Checkbox */}
+                      <input 
+                        type="checkbox" 
+                        checked={selectedStudents.includes(student._id)}
+                        onChange={() => toggleSelect(student._id)}
+                        className="w-5 h-5 mt-1 cursor-pointer flex-shrink-0"
+                      />
+                      <div>
+                        <p className="font-bold text-gray-800 text-base">
+                          {index + 1}. {student.FirstName} {student.LastName}
+                        </p>
+                        <p className="text-sm text-gray-600">{student.Gender}</p>
+                      </div>
                     </div>
                     <button 
                       onClick={() => handleDelete(student._id)}
-                      className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition text-xs"
+                      className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition text-xs flex-shrink-0"
                     >
                       Delete
                     </button>
@@ -167,6 +234,15 @@ export default function AdminPage() {
               <table className="min-w-full bg-white border border-gray-200">
                 <thead>
                   <tr className="bg-gray-100 border-b">
+                    {/* Desktop Select All Checkbox */}
+                    <th className="py-3 px-4 w-12">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedStudents.length === displayedStudents.length && displayedStudents.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                    </th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-600">S/N</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-600">FirstName</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-600">LastName</th>
@@ -178,7 +254,15 @@ export default function AdminPage() {
                 </thead>
                 <tbody>
                   {displayedStudents.map((student, index) => (
-                    <tr key={student._id} className="border-b hover:bg-gray-50">
+                    <tr key={student._id} className={`border-b hover:bg-gray-50 ${selectedStudents.includes(student._id) ? 'bg-red-50' : ''}`}>
+                      <td className="py-3 px-4">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedStudents.includes(student._id)}
+                          onChange={() => toggleSelect(student._id)}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                      </td>
                       <td className="py-3 px-4 text-gray-500">{index + 1}</td>
                       <td className="py-3 px-4">{student.FirstName}</td>
                       <td className="py-3 px-4">{student.LastName}</td>
